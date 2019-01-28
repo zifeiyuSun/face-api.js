@@ -8,9 +8,27 @@ import { FaceFeatureExtractorParams, IFaceFeatureExtractor } from '../faceFeatur
 import { cOutAge, cOutEthnicity, cOutGender } from './const';
 import { extractParams } from './extractParams';
 import { extractParamsFromWeigthMap } from './extractParamsFromWeigthMap';
-import { NetParams } from './types';
+import { Ethnicity, ethnicityLabels, EthnicityPrediction, Gender, genderLabels, GenderPrediction, NetParams } from './types';
 
 export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
+
+  public static decodeEthnicityProbabilites(probabilities: number[] | Float32Array): EthnicityPrediction[] {
+    if (probabilities.length !== 5) {
+      throw new Error(`decodeEthnicityProbabilites - expected probabilities.length to be 5, have: ${probabilities.length}`)
+    }
+
+    return (Object.keys(ethnicityLabels) as Ethnicity[])
+      .map(ethnicity => ({ ethnicity, probability: probabilities[ethnicityLabels[ethnicity]] }))
+  }
+
+  public static decodeGenderProbabilites(probabilities: number[] | Float32Array): GenderPrediction[] {
+    if (probabilities.length !== 2) {
+      throw new Error(`decodeGenderProbabilites - expected probabilities.length to be 2, have: ${probabilities.length}`)
+    }
+
+    return (Object.keys(genderLabels) as Gender[])
+      .map(gender => ({ gender, probability: probabilities[genderLabels[gender]] }))
+  }
 
   protected _faceFeatureExtractor: FaceFeatureExtractor
 
@@ -57,6 +75,23 @@ export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
 
   public async forward(input: TNetInput): Promise<{ age: tf.Tensor2D, gender: tf.Tensor2D, ethnicity: tf.Tensor2D }> {
     return this.forwardInput(await toNetInput(input))
+  }
+
+  public async predictAgeGenderAndEthnicity(input: TNetInput) {
+    const netInput = await toNetInput(input)
+    const out = await this.forwardInput(netInput)
+    const [ageData, genderData, ethnicityData] = await Promise.all([out.age.data(), out.gender.data(), out.ethnicity.data()])
+
+    const age = ageData[0]
+
+    out.age.dispose()
+    out.gender.dispose()
+    out.ethnicity.dispose()
+
+    const gender = AgeGenderEthnicityNet.decodeGenderProbabilites(genderData as Float32Array)
+    const ethnicity = AgeGenderEthnicityNet.decodeEthnicityProbabilites(ethnicityData as Float32Array)
+
+    return { age, gender, ethnicity }
   }
 
   public dispose(throwOnRedispose: boolean = true) {
