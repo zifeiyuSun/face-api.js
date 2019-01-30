@@ -18,7 +18,7 @@ export class FaceExpressionNet extends FaceProcessor<FaceFeatureExtractorParams>
     return label
   }
 
-  public static decodeProbabilites(probabilities: number[] | Float32Array): FaceExpressionPrediction[] {
+  public static decodeProbabilities(probabilities: number[] | Float32Array): FaceExpressionPrediction[] {
     if (probabilities.length !== 7) {
       throw new Error(`decodeProbabilites - expected probabilities.length to be 7, have: ${probabilities.length}`)
     }
@@ -50,7 +50,7 @@ export class FaceExpressionNet extends FaceProcessor<FaceFeatureExtractorParams>
     out.dispose()
 
     const predictionsByBatch = probabilitesByBatch
-      .map(propablities => FaceExpressionNet.decodeProbabilites(propablities as Float32Array))
+      .map(propablities => FaceExpressionNet.decodeProbabilities(propablities as Float32Array))
 
     return netInput.isBatchInput
       ? predictionsByBatch

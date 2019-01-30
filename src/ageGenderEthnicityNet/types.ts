@@ -1,10 +1,10 @@
-import { FCParams } from 'tfjs-tiny-yolov2';
+import { TfjsImageRecognitionBase } from 'tfjs-image-recognition-base';
 
 export type NetParams = {
   fc: {
-    age: FCParams
-    gender: FCParams
-    ethnicity: FCParams
+    age: TfjsImageRecognitionBase.FCParams
+    gender: TfjsImageRecognitionBase.FCParams
+    ethnicity: TfjsImageRecognitionBase.FCParams
   }
 }
 

@@ -12,7 +12,7 @@ import { Ethnicity, ethnicityLabels, EthnicityPrediction, Gender, genderLabels, 
 
 export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
 
-  public static decodeEthnicityProbabilites(probabilities: number[] | Float32Array): EthnicityPrediction[] {
+  public static decodeEthnicityProbabilities(probabilities: number[] | Float32Array): EthnicityPrediction[] {
     if (probabilities.length !== 5) {
       throw new Error(`decodeEthnicityProbabilites - expected probabilities.length to be 5, have: ${probabilities.length}`)
     }
@@ -21,7 +21,7 @@ export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
       .map(ethnicity => ({ ethnicity, probability: probabilities[ethnicityLabels[ethnicity]] }))
   }
 
-  public static decodeGenderProbabilites(probabilities: number[] | Float32Array): GenderPrediction[] {
+  public static decodeGenderProbabilities(probabilities: number[] | Float32Array): GenderPrediction[] {
     if (probabilities.length !== 2) {
       throw new Error(`decodeGenderProbabilites - expected probabilities.length to be 2, have: ${probabilities.length}`)
     }
@@ -65,12 +65,14 @@ export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
   }
 
   public forwardInput(input: NetInput | tf.Tensor4D): { age: tf.Tensor2D, gender: tf.Tensor2D, ethnicity: tf.Tensor2D } {
-    const { age, gender, ethnicity } = this.runNet(input)
-    return {
-      age,
-      gender: tf.softmax(gender),
-      ethnicity: tf.softmax(ethnicity)
-    }
+    return tf.tidy(() => {
+      const { age, gender, ethnicity } = this.runNet(input)
+      return {
+        age,
+        gender: tf.softmax(gender),
+        ethnicity: tf.softmax(ethnicity)
+      }
+    })
   }
 
   public async forward(input: TNetInput): Promise<{ age: tf.Tensor2D, gender: tf.Tensor2D, ethnicity: tf.Tensor2D }> {
@@ -88,8 +90,8 @@ export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
     out.gender.dispose()
     out.ethnicity.dispose()
 
-    const gender = AgeGenderEthnicityNet.decodeGenderProbabilites(genderData as Float32Array)
-    const ethnicity = AgeGenderEthnicityNet.decodeEthnicityProbabilites(ethnicityData as Float32Array)
+    const gender = AgeGenderEthnicityNet.decodeGenderProbabilities(genderData as Float32Array)
+    const ethnicity = AgeGenderEthnicityNet.decodeEthnicityProbabilities(ethnicityData as Float32Array)
 
     return { age, gender, ethnicity }
   }

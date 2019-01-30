@@ -1,19 +1,19 @@
-import { extractWeightsFactory, ParamMapping } from 'tfjs-image-recognition-base';
-import { extractFCParamsFactory } from 'tfjs-tiny-yolov2';
+
 
 import { cOutAge, cOutEthnicity, cOutGender } from './const';
 import { NetParams } from './types';
+import { TfjsImageRecognitionBase } from 'tfjs-image-recognition-base';
 
-export function extractParams(weights: Float32Array, channelsIn: number): { params: NetParams, paramMappings: ParamMapping[] } {
+export function extractParams(weights: Float32Array, channelsIn: number): { params: NetParams, paramMappings: TfjsImageRecognitionBase.ParamMapping[] } {
 
-  const paramMappings: ParamMapping[] = []
+  const paramMappings: TfjsImageRecognitionBase.ParamMapping[] = []
 
   const {
     extractWeights,
     getRemainingWeights
-  } = extractWeightsFactory(weights)
+  } = TfjsImageRecognitionBase.extractWeightsFactory(weights)
 
-  const extractFCParams = extractFCParamsFactory(extractWeights, paramMappings)
+  const extractFCParams = TfjsImageRecognitionBase.extractFCParamsFactory(extractWeights, paramMappings)
 
   const age = extractFCParams(channelsIn, cOutAge, 'fc/age')
   const gender = extractFCParams(channelsIn, cOutGender, 'fc/gender')
