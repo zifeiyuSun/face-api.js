@@ -1,6 +1,8 @@
 import * as tf from '@tensorflow/tfjs-core';
 import { NetInput, NeuralNetwork, TNetInput, toNetInput } from 'tfjs-image-recognition-base';
 
+import { EthnicityPrediction } from '../classes/EthnicityPrediction';
+import { GenderPrediction } from '../classes/GenderPrediction';
 import { fullyConnectedLayer } from '../common/fullyConnectedLayer';
 import { seperateWeightMaps } from '../common/seperateWeightMaps';
 import { FaceFeatureExtractor } from '../faceFeatureExtractor/FaceFeatureExtractor';
@@ -8,27 +10,9 @@ import { FaceFeatureExtractorParams, IFaceFeatureExtractor } from '../faceFeatur
 import { cOutAge, cOutEthnicity, cOutGender } from './const';
 import { extractParams } from './extractParams';
 import { extractParamsFromWeigthMap } from './extractParamsFromWeigthMap';
-import { Ethnicity, ethnicityLabels, EthnicityPrediction, Gender, genderLabels, GenderPrediction, NetParams } from './types';
+import { NetParams } from './types';
 
-export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
-
-  public static decodeEthnicityProbabilities(probabilities: number[] | Float32Array): EthnicityPrediction[] {
-    if (probabilities.length !== 5) {
-      throw new Error(`decodeEthnicityProbabilites - expected probabilities.length to be 5, have: ${probabilities.length}`)
-    }
-
-    return (Object.keys(ethnicityLabels) as Ethnicity[])
-      .map(ethnicity => ({ ethnicity, probability: probabilities[ethnicityLabels[ethnicity]] }))
-  }
-
-  public static decodeGenderProbabilities(probabilities: number[] | Float32Array): GenderPrediction[] {
-    if (probabilities.length !== 2) {
-      throw new Error(`decodeGenderProbabilites - expected probabilities.length to be 2, have: ${probabilities.length}`)
-    }
-
-    return (Object.keys(genderLabels) as Gender[])
-      .map(gender => ({ gender, probability: probabilities[genderLabels[gender]] }))
-  }
+export class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
 
   protected _faceFeatureExtractor: FaceFeatureExtractor
 
@@ -90,8 +74,8 @@ export abstract class AgeGenderEthnicityNet extends NeuralNetwork<NetParams> {
     out.gender.dispose()
     out.ethnicity.dispose()
 
-    const gender = AgeGenderEthnicityNet.decodeGenderProbabilities(genderData as Float32Array)
-    const ethnicity = AgeGenderEthnicityNet.decodeEthnicityProbabilities(ethnicityData as Float32Array)
+    const gender = GenderPrediction.fromProbabilities(genderData as Float32Array)
+    const ethnicity = EthnicityPrediction.fromProbabilities(ethnicityData as Float32Array)
 
     return { age, gender, ethnicity }
   }
